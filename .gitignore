@@ -1,0 +1,20 @@
+## model set - too large to upload
+/Skeleton_django/Opensource_project/temp/pose
+
+## img & output
+*.jpg
+*.jpeg
+*.png
+
+## video & output
+*.avi
+*.mp4
+
+## pycache
+*__pycache__*
+
+## else need, add below
+.idea
+
+## else need, add below
+
