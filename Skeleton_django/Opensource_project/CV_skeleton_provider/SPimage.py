@@ -1,17 +1,24 @@
 import argparse
 import cv2
+import imutils
 import time
 import numpy as np
 import sys,os
 
-sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
-
-from utils.formatter import optionChecker
-from connect_location import detect
+#sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
+from utils_formatter import optionChecker
+# from connect_location import detect
+from utils_formatter import optionChecker
+from utils_preprocessor import preBack
+from utils_preprocessor import preGray
+from utils_preprocessor import preGamma
+from utils_preprocessor import preBlackProportion
 
 def forImage(opt):
     print('img')
-    source, out_path, option, exclude, weightsFile, protoFile, threshold, gray_bool, back_bool, selectRect_bool, auto_location = opt.source, opt.output, opt.option, opt.exclude, opt.weight, opt.proto, opt.thres, opt.gray, opt.back, opt.selectRect, opt.autolocation
+    source, out_path, option, exclude, weightsFile, protoFile, threshold, gray_bool, back_bool, selectRect_bool, auto_bool, gamma_value, b_propo_bool = \
+      opt.source, opt.output, opt.option, opt.exclude, opt.weight, opt.proto, opt.thres, opt.gray, opt.back, opt.selectRect, opt.autolocation, opt.gamma, opt.b_propo
+    
     opt_dict = optionChecker(option)
 
     if exclude != -1:
@@ -25,27 +32,22 @@ def forImage(opt):
                   [12, 13], [0, 14], [0, 15], [14, 16], [15, 17]]
 
     frame = cv2.imread(source)
+    originFrame = frame.copy()
+    
+    if gamma_value > 0:
+        frame = preGamma(frame, gamma_value)
+    if b_propo_bool:
+        preBlackProportion(frame)
     if back_bool:
-        mask = np.zeros(frame.shape[:2], np.uint8)
-        bgdModel = np.zeros((1, 65), np.float64)
-        fgdModel = np.zeros((1, 65), np.float64)
-        if selectRect_bool:
-            rect = cv2.selectROI(frame)
-        elif auto_location:
-            temp = detect(1,frame)
-            rect = (int(temp[0]),int(temp[1]),int(temp[2])-10,int(temp[3]-10))
-        else:
-            rect = (10, 10, frame.shape[1] - 10, frame.shape[0] - 10)
-        cv2.grabCut(frame, mask, rect, bgdModel, fgdModel, 10, cv2.GC_INIT_WITH_RECT)
-        mask2 = np.where((mask == 2) | (mask == 0), 0, 1).astype('uint8')
-        frame = frame * mask2[:, :, np.newaxis]
+        rect_init = (0, 0, 0, 0)
+        if auto_bool:
+          #CV_skeleton_provider = detect(1, frame)
+          #temp_rect = (int(CV_skeleton_provider[0]), int(CV_skeleton_provider[1]), int(CV_skeleton_provider[2])-10, int(CV_skeleton_provider[3]-10))
+          #frame, unused_rect = preBack(frame, selectRect_bool, temp_rect)
+          print('imported none')
+        frame = preBack(frame, selectRect_bool, rect_init)
     if gray_bool:
-        frame = cv2.imread(source, cv2.IMREAD_UNCHANGED)
-        bgr = frame[:, :, :3]
-        gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
-        bgr = cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
-        # alpha = rgb2gray(frame)  # Channel 3
-        frame = np.dstack([bgr])  # Add the alpha channel
+        frame = preGray(frame, source)
 
     frameWidth = frame.shape[1]
     frameHeight = frame.shape[0]
@@ -60,7 +62,6 @@ def forImage(opt):
                                     (0, 0, 0), swapRB=False, crop=False)
 
     net.setInput(inpBlob)
-
     output = net.forward()
     print("time taken : {:.3f}".format(time.time() - t))
 
@@ -80,9 +81,10 @@ def forImage(opt):
         if prob > threshold:
             points.append((int(x), int(y)))
             if (opt_dict['keyp']):
-                cv2.circle(frame, points[-1], 8, (0, 255, 255), thickness=-1, lineType=cv2.FILLED)
+                cv2.circle(originFrame, points[-1], 8, (0, 255, 255),
+                           thickness=-1, lineType=cv2.FILLED)
             if (opt_dict['label']):
-                cv2.putText(frame, "{}".format(i), points[-1], cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2,
+                cv2.putText(originFrame, "{}".format(i), points[-1], cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2,
                             lineType=cv2.LINE_AA)
         else:
             points.append(None)
@@ -94,10 +96,11 @@ def forImage(opt):
             partB = pair[1]
 
             if points[partA] and points[partB]:
-                cv2.line(frame, points[partA], points[partB], (0, 255, 255), 2)
+                cv2.line(originFrame, points[partA], points[partB], (0, 255, 255), 2)
 
     cv2.imshow('output', frame)
-    cv2.imwrite(out_path + '.jpg', frame)
+    cv2.imshow('output_origin', originFrame)
+    cv2.imwrite(out_path + '.jpg', originFrame)
 
     print("Total time taken : {:.3f}".format(time.time() - t))
 

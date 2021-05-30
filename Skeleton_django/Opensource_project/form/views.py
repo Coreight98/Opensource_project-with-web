@@ -22,9 +22,9 @@ def result(request):
             with open('out.png','wb') as file:
                 de = base64.decodebytes(encoded)
                 file.write(de)
-            start_path = 'python /Users/maxcha/PycharmProjects/pythonProject/Skeleton_django/Opensource_project/temp/SkeletonProvider.py'
-            file_path = '  --source /Users/maxcha/PycharmProjects/pythonProject/Skeleton_django/Opensource_project/out.png'
-
+            start_path = 'python "CV_skeleton_provider/SkeletonProvider.py"'
+            file_path = '  --source "out.png"'
+            os.system('pwd')
             os.system(start_path+file_path)
 
     name = 'd'
