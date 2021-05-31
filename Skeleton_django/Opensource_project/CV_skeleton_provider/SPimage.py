@@ -98,11 +98,13 @@ def forImage(opt):
             if points[partA] and points[partB]:
                 cv2.line(originFrame, points[partA], points[partB], (0, 255, 255), 2)
 
-    cv2.imshow('output', frame)
-    cv2.imshow('output_origin', originFrame)
-    cv2.imwrite(out_path + '.jpg', originFrame)
-
+    #cv2.imshow('output', frame)
+    #cv2.imshow('output_origin', originFrame)
+    #cv2.imwrite(out_path + '.jpg', originFrame)
+    print(source)
+    os.system('pwd')
+    cv2.imwrite('result.jpg', originFrame)
     print("Total time taken : {:.3f}".format(time.time() - t))
 
-    cv2.waitKey(0)
+    #cv2.waitKey(0)
     return
