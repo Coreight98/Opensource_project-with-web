@@ -1,6 +1,8 @@
 # from django.shortcuts import render
 import json
 import argparse
+import time
+
 from django.http import JsonResponse
 # Create your views here.
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -12,6 +14,7 @@ import os
 @ensure_csrf_cookie
 
 def result(request):
+    name = ''
     if request.method == "POST":
         if request.POST['options'] and request.POST['file']:
             options = json.loads(request.POST['options'])
@@ -23,12 +26,17 @@ def result(request):
                 de = base64.decodebytes(encoded)
                 file.write(de)
             start_path = 'python "CV_skeleton_provider/SkeletonProvider.py"'
-            file_path = '  --source "out.png"'
+            file_path = '  --source "out.png" --gray {} --gamma {} --back {} --autolocation {} --b_propo {}' .format(options['gray'],float(options['gamma']),options['back'],options['autolocation'],options['b_propo'])
             os.system('pwd')
             os.system(start_path+file_path)
-
-    name = 'd'
-    return JsonResponse(name,safe=False)
+            time.sleep(3)
+            with open("result.jpg", "rb") as img_file:
+                my_string = base64.b64encode(img_file.read()).decode('utf8')
+            print(my_string)
+            name = my_string
+    return JsonResponse({
+        'name' : 'data:image/jpeg;base64,'+name,
+    }, json_dumps_params = {'ensure_ascii': True})
 
 class UserViewSet(viewsets.ModelViewSet): # ModelViewSet 활용
     queryset = User.objects.all()
